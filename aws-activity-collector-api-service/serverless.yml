@@ -1,0 +1,59 @@
+# This file is the main config file for activity-collector-api-service.
+
+service: activity-collector-api-service-dev
+
+# Serverless framework version
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: java8
+  lambdaHashingVersion: 20201221
+  stage: dev
+  region: us-east-1
+  apiGateway:
+    apiKeys:
+      - dev-keyPerClientA
+      - dev-keyPerClientB
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+          Resource:
+            Fn::GetAtt:
+              - ActivityEventsDynamoDBTable
+              - Arn
+
+# packaging information
+package:
+  artifact: target/activity-collector-api-dev.jar
+
+functions:
+  storeActivity:
+    handler: com.serverless.StoreActivityHandler
+    events:
+      - http:
+          path: /activities
+          method: post
+          private: true
+
+#Configuration DynamoDB
+resources:
+  Resources:
+    ActivityEventsDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: activity-events-table-dev
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES

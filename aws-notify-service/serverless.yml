@@ -1,0 +1,43 @@
+# This file is the main config file for notification-service.
+service: notification-service
+
+# Serverless framework version
+frameworkVersion: '2'
+
+provider:
+  name: aws
+  runtime: java8
+  lambdaHashingVersion: 20201221
+  stage: dev
+  region: us-east-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:DescribeStream
+            - dynamodb:ListShards
+            - dynamodb:ListStreams
+          Resource: arn:aws:dynamodb:us-east-1:241706047005:table/activity-events-table-dev/stream/2021-06-13T13:32:13.094
+        - Effect: 'Allow'
+          Action:
+            - ses:SendEmail
+          Resource: "*"
+
+# packaging information
+package:
+  artifact: target/notification-dev.jar
+
+functions:
+  notifyException:
+    handler: com.serverless.NotifyExceptionHandler
+    events:
+      - stream:
+          type: dynamodb
+          arn: arn:aws:dynamodb:us-east-1:241706047005:table/activity-events-table-dev/stream/2021-06-13T13:32:13.094
+
